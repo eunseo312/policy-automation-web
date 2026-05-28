@@ -1,0 +1,18 @@
+{
+  "cur_month": 5,
+  "prev_month": 4,
+  "generated_at": "2026-05-21 11:13",
+  "dcp": {
+    "코웨이": {"fee_up": 407,"fee_down": 0,"new_products": [{"model": "CHPI-5820L","name": "아이스 스탠드 3.0"},{"model": "AD-2026C","name": "인버터 제습기/20L"},{"model": "BAS51-A","name": "더매너 비데 플러스"},{"model": "[의료기기]","name": "코어셋"},{"model": "[의료기기]","name": "마사지셋"},{"model": "[의료기기]","name": "리클라이너 코어셋"},{"model": "[의료기기]","name": "리클라이너 마사지셋"},{"model": "MC-SC01","name": "시그니처"}],"new_count": 9,"promo_cur": ["반값할인","1년간 1만원 할인"],"halfprice_cur": [3,6,9,12,18],"halfprice_prev": [3,6,9,12],"타사보상_cur": 420,"타사보상_prev": 378,"pkg_cur": 0,"pkg_prev": 0},
+    "쿠쿠": {"fee_up": 0,"fee_down": 0,"new_products": [{"model": "CP-AQS100EWH","name": "CP-AQS100EWH"},{"model": "CP-SS100WSV","name": "CP-SS100WSV"},{"model": "CMS-J310GR","name": "CMS-J310GR/BR"},{"model": "CMS-J410WB","name": "CMS-J410WB"},{"model": "NW-BS150UW","name": "NW-BS150UW"},{"model": "ND-A0610FG","name": "ND-A0610FG/P/M"},{"model": "CVC-DEM2510NW","name": "상품명 추후 추가 예정"},{"model": "CWM-AT1210B","name": "상품명 추후 추가 예정"},{"model": "CRG-CR4810MS","name": "상품명 추후 추가 예정"},{"model": "CKR-BFFD1230GEG","name": "상품명 추후 추가 예정"},{"model": "CA-CRC0610W","name": "상품명 추후 추가 예정"},{"model": "CA-CRC1010W","name": "상품명 추후 추가 예정"}],"new_count": 38,"promo_cur": ["6개월 반값","12개월 반값","10%할인","4천원할인","특가","4개월 면제","3개월 반값","9개월 반값","1년 1만원 할인","타사보상","타사보상2"],"halfprice_cur": [3,6,9,12],"halfprice_prev": [3,6,9,12],"타사보상_cur": 184,"타사보상_prev": 184,"pkg_cur": 1118,"pkg_prev": 1075},
+    "SK인텔릭스": {"fee_up": 0,"fee_down": 0,"new_products": [{"model": "WPUMAC306SWH","name": "투워터 직수 냉온정 정수기"},{"model": "WPUIAC506SNW","name": "MEGA ICE 냉온정 얼음정수기"},{"model": "WPUTDF104RNW","name": "뉴슬림 플러스 UF"},{"model": "WPUTDF114RNW","name": "뉴슬림 정수기 NANO"}],"new_count": 106,"promo_cur": ["반값 할인"],"halfprice_cur": [3,6,12,15,18],"halfprice_prev": [3,6,12],"타사보상_cur": 67,"타사보상_prev": 62,"pkg_cur": 0,"pkg_prev": 0},
+    "청호": {"fee_up": 1,"fee_down": 7,"new_products": [{"model": "3인용","name": "네스티지 모션 소파"},{"model": "4인용","name": "네스티지 모션 소파"},{"model": "3인용","name": "네스티지 스윙 소파"},{"model": "4인용","name": "네스티지 스윙 소파"},{"model": "5인용","name": "네스티지 스윙 소파"}],"new_count": 5,"promo_cur": ["반값 할인"],"halfprice_cur": [],"halfprice_prev": [],"타사보상_cur": 584,"타사보상_prev": 580,"pkg_cur": 0,"pkg_prev": 0}
+  },
+  "bm2": {
+    "헬로렌탈": {"total_cur": 2693,"total_prev": 2787,"new_count": 52,"new_brands": ["LG","로보락","삼성","대우써머스","누하스"],"fee_pct_cur": [17],"fee_pct_prev": [18,20,22],"fee_changed": true,"promo_cur": 538,"promo_prev": 99,"fee_up": 6,"fee_down": 104},
+    "현대유버스": {"total_cur": 4577,"total_prev": 4695,"new_count": 925,"new_brands": ["삼성","LG","퍼니챗","레이윙","삼천리"],"fee_pct_cur": [],"fee_pct_prev": [],"fee_changed": false,"promo_cur": 0,"promo_prev": 0,"fee_up": 0,"fee_down": 0},
+    "이니렌탈": {"total_cur": 2091,"total_prev": 2139,"new_count": 67,"new_brands": ["삼성","로보락","LG","쿠쿠"],"fee_pct_cur": [18],"fee_pct_prev": [18],"fee_changed": false,"promo_cur": 0,"promo_prev": 0,"fee_up": 102,"fee_down": 10},
+    "스마트렌탈": {"total_cur": 2972,"total_prev": 2975,"new_count": 41,"new_brands": ["웰치","LG전자","누하스","로보락","위닉스"],"fee_pct_cur": [14,16],"fee_pct_prev": [14],"fee_changed": true,"promo_cur": 15,"promo_prev": 0,"fee_up": 235,"fee_down": 12},
+    "BS렌탈": {"total_cur": 3123,"total_prev": 3116,"new_count": 480,"new_brands": ["삼성전자","퍼니챗","로보락","삼천리자전거","더마드라이"],"fee_pct_cur": [],"fee_pct_prev": [],"fee_changed": false,"promo_cur": 0,"promo_prev": 0,"fee_up": 30,"fee_down": 6}
+  }
+}

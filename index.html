@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>정책 프로모션 대시보드</title>
+  <style>
+    :root {
+      --navy:      #1E3A5F;
+      --blue-mid:  #2563A8;
+      --blue-soft: #4A86C8;
+      --blue-pale: #EBF4FB;
+      --gray-dark: #4B5563;
+      --gray-mid:  #6B7280;
+      --gray-light:#E5E7EB;
+      --gray-pale: #F3F4F6;
+      --text:      #1F2937;
+      --chg-bg:    #FFF7ED; --chg-fg: #C2410C;
+      --down-bg:   #EFF6FF; --down-fg: #1D4ED8;
+      --new-bg:    #ECFDF5; --new-fg: #047857;
+      --up-bg:     #FEF2F2; --up-fg:  #DC2626;
+      --same-bg:   #F3F4F6; --same-fg: #6B7280;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', -apple-system, sans-serif;
+      background: #EEF2F7;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.5;
+      min-width: 1100px;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      background: linear-gradient(135deg, #1E3A5F 0%, #2563A8 100%);
+      color: #fff;
+      padding: 18px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+    }
+    .page-header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    .page-header .subtitle { font-size: 11.5px; opacity: 0.7; margin-top: 3px; }
+    .page-header .right { text-align: right; }
+    .page-header .month-badge { font-size: 30px; font-weight: 800; letter-spacing: -1px; }
+    .page-header .gen-time { font-size: 10.5px; opacity: 0.6; margin-top: 2px; }
+
+    /* ── KPI Bar ── */
+    .kpi-bar {
+      background: #16305A;
+      padding: 0 32px;
+      display: flex;
+      gap: 0;
+      border-bottom: 3px solid var(--blue-mid);
+    }
+    .kpi-item {
+      display: flex; flex-direction: column; align-items: flex-start;
+      padding: 12px 28px 12px 0; margin-right: 28px;
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+    .kpi-item:last-child { border-right: none; }
+    .kpi-value { font-size: 26px; font-weight: 800; color: #fff; line-height: 1; }
+    .kpi-value .unit { font-size: 14px; font-weight: 600; margin-left: 1px; }
+    .kpi-label { font-size: 10px; color: rgba(255,255,255,0.55); margin-top: 4px; letter-spacing: 0.5px; }
+    .kpi-sub   { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 1px; }
+
+    /* ── Tab Nav ── */
+    .tab-nav {
+      background: #1A3356;
+      padding: 0 32px;
+      display: flex;
+      gap: 4px;
+      border-bottom: 2px solid var(--blue-mid);
+    }
+    .tab-btn {
+      padding: 10px 20px;
+      font-size: 13px; font-weight: 600;
+      color: rgba(255,255,255,0.55);
+      background: transparent;
+      border: none; border-bottom: 3px solid transparent;
+      cursor: pointer; transition: all 0.15s;
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: -2px;
+    }
+    .tab-btn:hover { color: rgba(255,255,255,0.85); }
+    .tab-btn.active { color: #fff; border-bottom-color: #60A5FA; }
+    .tab-btn .icon { font-size: 15px; }
+
+    /* ── Main ── */
+    .main { padding: 24px 32px; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Dashboard: Section ── */
+    .section { margin-bottom: 28px; }
+    .section-title {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--navy); color: #fff;
+      padding: 10px 18px;
+      border-radius: 8px 8px 0 0;
+      font-size: 13px; font-weight: 700;
+    }
+    .section-title .ch-badge {
+      background: rgba(255,255,255,0.18); padding: 2px 10px;
+      border-radius: 20px; font-size: 11px; font-weight: 600;
+    }
+    .section-title .meta { margin-left: auto; font-size: 11px; opacity: 0.7; font-weight: 400; }
+    .cards-wrap {
+      background: #fff; border: 1px solid var(--gray-light);
+      border-top: none; border-radius: 0 0 8px 8px; padding: 16px;
+    }
+    .dcp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .bm2-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+
+    /* ── Brand card ── */
+    .brand-card {
+      border-radius: 8px; border: 1px solid var(--gray-light);
+      overflow: hidden; background: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      display: flex; flex-direction: column;
+    }
+    .card-header {
+      padding: 10px 14px 9px; font-size: 14px; font-weight: 800;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .card-body { padding: 12px 14px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+    .metric-label {
+      font-size: 9.5px; color: var(--gray-mid); font-weight: 700;
+      letter-spacing: 0.6px; text-transform: uppercase; margin-bottom: 4px;
+    }
+    hr.divider { border: none; border-top: 1px solid var(--gray-pale); }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 8px; border-radius: 20px;
+      font-size: 11px; font-weight: 700; white-space: nowrap;
+    }
+    .b-up   { background: var(--up-bg);   color: var(--up-fg); }
+    .b-down { background: var(--down-bg); color: var(--down-fg); }
+    .b-new  { background: var(--new-bg);  color: var(--new-fg); }
+    .b-chg  { background: var(--chg-bg);  color: var(--chg-fg); }
+    .b-same { background: var(--same-bg); color: var(--same-fg); font-weight: 400; }
+    .b-none { background: #F9FAFB; color: #9CA3AF; font-weight: 400; }
+    .cr { display: flex; align-items: center; gap: 5px; font-size: 12px; flex-wrap: wrap; }
+    .cr .prev { color: var(--gray-mid); }
+    .cr .arr  { color: #94A3B8; font-size: 10px; }
+    .cr .cur.up   { color: var(--up-fg);   font-weight: 700; }
+    .cr .cur.down { color: var(--down-fg); font-weight: 700; }
+    .cr .cur.same { color: var(--text);    font-weight: 500; }
+    .cr .cur.new  { color: var(--new-fg);  font-weight: 700; }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 4px; }
+    .pill {
+      padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600;
+      background: var(--blue-pale); color: var(--blue-mid);
+    }
+    .pill.new-p { background: var(--new-bg); color: var(--new-fg); border: 1px solid #A7F3D0; }
+    .pill.none  { background: #F3F4F6; color: #9CA3AF; font-weight: 400; }
+    .prod-count { font-size: 22px; font-weight: 800; color: var(--navy); line-height: 1; }
+    .prod-unit  { font-size: 11px; color: var(--gray-mid); margin-left: 2px; }
+    .prod-names { font-size: 10.5px; color: var(--gray-dark); margin-top: 4px; line-height: 1.65; }
+    .prod-names span::before { content: '· '; color: #94A3B8; }
+    .total-block { display: flex; align-items: baseline; gap: 6px; }
+    .total-num { font-size: 22px; font-weight: 800; color: var(--navy); line-height: 1; }
+    .total-sub { font-size: 11px; color: var(--gray-mid); }
+    .delta { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px; }
+    .delta.up   { color: var(--up-fg);   background: var(--up-bg); }
+    .delta.down { color: var(--down-fg); background: var(--down-bg); }
+    .delta.same { color: var(--same-fg); background: var(--same-bg); }
+    .rate-row { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+    .rate-chip {
+      padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;
+      background: var(--blue-pale); color: var(--blue-mid);
+    }
+    .rate-chip.chg  { background: var(--chg-bg); color: var(--chg-fg); }
+    .rate-chip.none { background: #F3F4F6; color: #9CA3AF; font-weight: 400; font-size: 10px; }
+    .promo-row { display: flex; flex-wrap: wrap; gap: 3px; }
+    .promo-chip {
+      padding: 1px 6px; border-radius: 3px; font-size: 10px;
+      background: var(--blue-pale); color: var(--navy); border: 1px solid #BFDBFE;
+    }
+
+    /* ════════════════════════════════════
+       REPORT TAB
+       ════════════════════════════════════ */
+    .report-wrap {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    /* ── Report toolbar ── */
+    .report-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .report-toolbar h2 { font-size: 15px; font-weight: 700; color: var(--navy); }
+    .toolbar-btns { display: flex; gap: 8px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 7px 14px; border-radius: 6px;
+      font-size: 12px; font-weight: 600;
+      cursor: pointer; border: none; transition: background 0.15s;
+    }
+    .btn-outline {
+      background: #fff; color: var(--navy);
+      border: 1px solid var(--gray-light);
+    }
+    .btn-outline:hover { background: var(--blue-pale); }
+    .btn-primary { background: var(--blue-mid); color: #fff; }
+    .btn-primary:hover { background: var(--navy); }
+
+    /* ── Report body ── */
+    .report-body {
+      background: #fff;
+      border: 1px solid var(--gray-light);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    /* ── Report: cover ── */
+    .r-cover {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--blue-mid) 100%);
+      color: #fff;
+      padding: 28px 36px;
+      display: flex; justify-content: space-between; align-items: flex-end;
+    }
+    .r-cover-title { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+    .r-cover-sub { font-size: 12px; opacity: 0.7; margin-top: 6px; }
+    .r-cover-month { font-size: 44px; font-weight: 900; opacity: 0.95; letter-spacing: -2px; line-height: 1; }
+    .r-cover-meta { font-size: 11px; opacity: 0.6; margin-top: 4px; text-align: right; }
+
+    /* ── Report: summary box ── */
+    .r-summary {
+      background: #EFF6FF;
+      border-left: 4px solid var(--blue-mid);
+      margin: 24px 36px;
+      padding: 14px 18px;
+      border-radius: 0 6px 6px 0;
+    }
+    .r-summary-title {
+      font-size: 11px; font-weight: 700; color: var(--blue-mid);
+      text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;
+    }
+    .r-summary-bullets { display: flex; flex-direction: column; gap: 4px; }
+    .r-bullet {
+      font-size: 12.5px; color: var(--text);
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .r-bullet .dot { color: var(--blue-mid); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Report: section header ── */
+    .r-sec-hdr {
+      background: var(--navy); color: #fff;
+      padding: 10px 36px;
+      font-size: 13px; font-weight: 700;
+      display: flex; align-items: center; gap: 10px;
+      margin-top: 24px;
+    }
+    .r-sec-hdr .ch { background: rgba(255,255,255,0.2); padding: 1px 8px; border-radius: 3px; font-size: 11px; }
+    .r-sec-hdr.bm2 { background: #2E5BA0; }
+
+    /* ── Report: sub-section label ── */
+    .r-sub-hdr {
+      padding: 8px 36px;
+      font-size: 11.5px; font-weight: 700; color: var(--gray-dark);
+      background: var(--gray-pale);
+      border-bottom: 1px solid var(--gray-light);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .r-sub-hdr::before { content: ''; display: block; width: 3px; height: 14px; background: var(--blue-mid); border-radius: 2px; }
+
+    /* ── Report: table ── */
+    .r-table-wrap { padding: 0 36px 20px; overflow-x: auto; }
+    .r-table {
+      width: 100%; border-collapse: collapse;
+      font-size: 12px;
+    }
+    .r-table th {
+      background: var(--gray-dark); color: #fff;
+      padding: 8px 12px; text-align: center;
+      font-size: 11px; font-weight: 700;
+      border: 1px solid rgba(255,255,255,0.15);
+      white-space: nowrap;
+    }
+    .r-table th.cur  { background: var(--blue-mid); }
+    .r-table th.prev { background: #52627A; }
+    .r-table th.brand-col { background: var(--gray-dark); }
+    .r-table td {
+      padding: 9px 12px; border: 1px solid var(--gray-light);
+      vertical-align: top; line-height: 1.55;
+    }
+    .r-table tr:nth-child(even) td { background: #F8FAFC; }
+    .r-table td.brand-cell {
+      font-weight: 700; font-size: 12px;
+      text-align: center; white-space: nowrap;
+    }
+    .r-table td.prev-cell { color: var(--gray-mid); background: #FAFAFA; }
+    .r-table .tag {
+      display: inline-block; padding: 1px 6px; border-radius: 3px;
+      font-size: 10px; font-weight: 700; margin-right: 3px; white-space: nowrap;
+    }
+    .tag-up   { background: var(--up-bg);   color: var(--up-fg); }
+    .tag-down { background: var(--down-bg); color: var(--down-fg); }
+    .tag-new  { background: var(--new-bg);  color: var(--new-fg); }
+    .tag-chg  { background: var(--chg-bg);  color: var(--chg-fg); }
+    .tag-same { background: var(--same-bg); color: var(--same-fg); }
+
+    /* ── Report: background text block ── */
+    .r-bg-table { padding: 0 36px 20px; }
+    .r-bg-row {
+      display: grid; grid-template-columns: 100px 1fr;
+      border-bottom: 1px solid var(--gray-light);
+      min-height: 48px;
+    }
+    .r-bg-row:last-child { border-bottom: none; }
+    .r-bg-brand {
+      display: flex; align-items: center; justify-content: center;
+      padding: 10px; font-weight: 700; font-size: 12px;
+      border-right: 1px solid var(--gray-light);
+    }
+    .r-bg-content {
+      padding: 10px 14px; font-size: 12px; line-height: 1.7; color: var(--text);
+    }
+    .r-bg-content .point { display: flex; gap: 8px; }
+    .r-bg-content .point-num { color: var(--blue-mid); font-weight: 700; flex-shrink: 0; }
+
+    /* ── Report footer ── */
+    .r-footer {
+      padding: 14px 36px;
+      background: var(--gray-pale);
+      border-top: 1px solid var(--gray-light);
+      font-size: 11px; color: var(--gray-mid);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    /* ── Print ── */
+    @media print {
+      body { background: #fff; min-width: 0; }
+      .page-header, .kpi-bar, .tab-nav, .report-toolbar { display: none !important; }
+      .tab-panel { display: block !important; }
+      #tab-dashboard { display: none !important; }
+      .report-body { border: none; }
+      .r-cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .r-sec-hdr, .r-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .brand-cell { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   Embedded Data  (run_all_brands.py → policy_dashboard.json)
+   ═══════════════════════════════════════════════════════════ */
+const DATA = {
+  "cur_month": 5,
+  "prev_month": 4,
+  "generated_at": "2026-05-21 11:13",
+  "dcp": {
+    "코웨이": {
+      "fee_up": 407, "fee_down": 0,
+      "new_products": [
+        {"model":"CHPI-5820L","name":"아이스 스탠드 3.0"},
+        {"model":"AD-2026C","name":"인버터 제습기/20L"},
+        {"model":"BAS51-A","name":"더매너 비데 플러스"},
+        {"model":"[의료기기]","name":"코어셋"},
+        {"model":"[의료기기]","name":"마사지셋"},
+        {"model":"[의료기기]","name":"리클라이너 코어셋"},
+        {"model":"[의료기기]","name":"리클라이너 마사지셋"},
+        {"model":"MC-SC01","name":"시그니처"}
+      ],
+      "new_count": 9,
+      "promo_cur": ["반값할인","1년간 1만원 할인"],
+      "halfprice_cur": [3,6,9,12,18], "halfprice_prev": [3,6,9,12],
+      "타사보상_cur": 420, "타사보상_prev": 378,
+      "pkg_cur": 0, "pkg_prev": 0
+    },
+    "쿠쿠": {
+      "fee_up": 0, "fee_down": 0,
+      "new_products": [
+        {"model":"CP-AQS100EWH","name":"CP-AQS100EWH"},
+        {"model":"CP-SS100WSV","name":"CP-SS100WSV"},
+        {"model":"CMS-J310GR","name":"CMS-J310GR/BR"},
+        {"model":"CMS-J410WB","name":"CMS-J410WB"},
+        {"model":"NW-BS150UW","name":"NW-BS150UW"},
+        {"model":"ND-A0610FG","name":"ND-A0610FG/P/M"},
+        {"model":"CVC-DEM2510NW","name":"(추후 추가 예정)"},
+        {"model":"CWM-AT1210B","name":"(추후 추가 예정)"},
+        {"model":"CRG-CR4810MS","name":"(추후 추가 예정)"},
+        {"model":"CKR-BFFD1230GEG","name":"(추후 추가 예정)"},
+        {"model":"CA-CRC0610W","name":"(추후 추가 예정)"},
+        {"model":"CA-CRC1010W","name":"(추후 추가 예정)"}
+      ],
+      "new_count": 38,
+      "promo_cur": ["6개월 반값","12개월 반값","10%할인","4천원할인","특가","4개월 면제","3개월 반값","9개월 반값","1년 1만원 할인","타사보상","타사보상2"],
+      "halfprice_cur": [3,6,9,12], "halfprice_prev": [3,6,9,12],
+      "타사보상_cur": 184, "타사보상_prev": 184,
+      "pkg_cur": 1118, "pkg_prev": 1075
+    },
+    "SK인텔릭스": {
+      "fee_up": 0, "fee_down": 0,
+      "new_products": [
+        {"model":"WPUMAC306SWH","name":"투워터 직수 냉온정 정수기"},
+        {"model":"WPUIAC506SNW","name":"MEGA ICE 냉온정 얼음정수기"},
+        {"model":"WPUTDF104RNW","name":"뉴슬림 플러스 UF"},
+        {"model":"WPUTDF114RNW","name":"뉴슬림 정수기 NANO"}
+      ],
+      "new_count": 106,
+      "promo_cur": ["반값 할인"],
+      "halfprice_cur": [3,6,12,15,18], "halfprice_prev": [3,6,12],
+      "타사보상_cur": 67, "타사보상_prev": 62,
+      "pkg_cur": 0, "pkg_prev": 0
+    },
+    "청호": {
+      "fee_up": 1, "fee_down": 7,
+      "new_products": [
+        {"model":"3인용","name":"네스티지 모션 소파"},
+        {"model":"4인용","name":"네스티지 모션 소파"},
+        {"model":"3인용","name":"네스티지 스윙 소파"},
+        {"model":"4인용","name":"네스티지 스윙 소파"},
+        {"model":"5인용","name":"네스티지 스윙 소파"}
+      ],
+      "new_count": 5,
+      "promo_cur": ["반값 할인"],
+      "halfprice_cur": [], "halfprice_prev": [],
+      "타사보상_cur": 584, "타사보상_prev": 580,
+      "pkg_cur": 0, "pkg_prev": 0
+    }
+  },
+  "bm2": {
+    "헬로렌탈": {
+      "total_cur":2693,"total_prev":2787,"new_count":52,
+      "new_brands":["LG","로보락","삼성","대우써머스","누하스"],
+      "fee_pct_cur":[17],"fee_pct_prev":[18,20,22],
+      "fee_changed":true,"promo_cur":538,"promo_prev":99,"fee_up":6,"fee_down":104
+    },
+    "현대유버스": {
+      "total_cur":4577,"total_prev":4695,"new_count":925,
+      "new_brands":["삼성","LG","퍼니챗","레이윙","삼천리"],
+      "fee_pct_cur":[],"fee_pct_prev":[],
+      "fee_changed":false,"promo_cur":0,"promo_prev":0,"fee_up":0,"fee_down":0
+    },
+    "이니렌탈": {
+      "total_cur":2091,"total_prev":2139,"new_count":67,
+      "new_brands":["삼성","로보락","LG","쿠쿠"],
+      "fee_pct_cur":[18],"fee_pct_prev":[18],
+      "fee_changed":false,"promo_cur":0,"promo_prev":0,"fee_up":102,"fee_down":10
+    },
+    "스마트렌탈": {
+      "total_cur":2972,"total_prev":2975,"new_count":41,
+      "new_brands":["웰치","LG전자","누하스","로보락","위닉스"],
+      "fee_pct_cur":[14,16],"fee_pct_prev":[14],
+      "fee_changed":true,"promo_cur":15,"promo_prev":0,"fee_up":235,"fee_down":12
+    },
+    "BS렌탈": {
+      "total_cur":3123,"total_prev":3116,"new_count":480,
+      "new_brands":["삼성전자","퍼니챗","로보락","삼천리자전거","더마드라이"],
+      "fee_pct_cur":[],"fee_pct_prev":[],
+      "fee_changed":false,"promo_cur":0,"promo_prev":0,"fee_up":30,"fee_down":6
+    }
+  }
+};
+
+/* ─── Brand color palette ─── */
+const BRAND_COLORS = {
+  '코웨이':    { bg: '#D6E8F7', fg: '#1E3A5F' },
+  '쿠쿠':      { bg: '#DBEAFE', fg: '#1E40AF' },
+  'SK인텔릭스': { bg: '#E0E7FF', fg: '#3730A3' },
+  '청호':      { bg: '#E8EEF7', fg: '#2E4A7A' },
+  '헬로렌탈':  { bg: '#EFF6FF', fg: '#1D4ED8' },
+  '현대유버스': { bg: '#E2E8F0', fg: '#334155' },
+  '이니렌탈':  { bg: '#DBEAFE', fg: '#1E40AF' },
+  '스마트렌탈': { bg: '#E8EEF7', fg: '#374151' },
+  'BS렌탈':   { bg: '#F1F5F9', fg: '#475569' },
+};
+
+/* ═══════════════════════════════════
+   Shared helpers
+   ═══════════════════════════════════ */
+function badge(cls, text) {
+  return `<span class="badge ${cls}">${text}</span>`;
+}
+function fmtRate(arr) {
+  return arr.length ? arr.map(r => r + '%').join(' / ') : '-';
+}
+function deltaBadge(cur, prev) {
+  const d = cur - prev;
+  if (d > 0) return `<span class="delta up">▲ ${d.toLocaleString()}</span>`;
+  if (d < 0) return `<span class="delta down">▼ ${Math.abs(d).toLocaleString()}</span>`;
+  return `<span class="delta same">—</span>`;
+}
+
+/* ═══════════════════════════════════
+   DASHBOARD TAB — card renderers
+   ═══════════════════════════════════ */
+function dcpCard(brand, d) {
+  const bc = BRAND_COLORS[brand] || { bg: '#EBF4FB', fg: '#1E3A5F' };
+  let feeBadge;
+  if (d.fee_up > 0 && d.fee_down > 0)
+    feeBadge = `${badge('b-up','▲ 인상 ' + d.fee_up + '건')} ${badge('b-down','▼ 인하 ' + d.fee_down + '건')}`;
+  else if (d.fee_up > 0)
+    feeBadge = badge('b-up', '▲ 인상 ' + d.fee_up + '건');
+  else if (d.fee_down > 0)
+    feeBadge = badge('b-down', '▼ 인하 ' + d.fee_down + '건');
+  else
+    feeBadge = badge('b-same', '변동 없음');
+
+  const newPeriods = new Set(d.halfprice_cur.filter(p => !d.halfprice_prev.includes(p)));
+  const halfPills = d.halfprice_cur.length
+    ? d.halfprice_cur.map(p =>
+        `<span class="pill ${newPeriods.has(p) ? 'new-p' : ''}">${p}개월${newPeriods.has(p) ? ' NEW' : ''}</span>`
+      ).join('')
+    : '<span class="pill none">미운영</span>';
+  const halfDiff = newPeriods.size > 0
+    ? `<span style="font-size:10px;color:var(--new-fg);margin-left:4px;">← ${[...newPeriods].sort((a,b)=>a-b).join('/')}개월 신규</span>`
+    : '';
+
+  const taDiff = d.타사보상_cur - d.타사보상_prev;
+  let taBadge;
+  if (taDiff > 0)
+    taBadge = `<div class="cr"><span class="prev">${d.타사보상_prev.toLocaleString()}건</span><span class="arr">→</span><span class="cur up">${d.타사보상_cur.toLocaleString()}건</span>${badge('b-up','▲ ' + taDiff)}</div>`;
+  else if (taDiff < 0)
+    taBadge = `<div class="cr"><span class="prev">${d.타사보상_prev.toLocaleString()}건</span><span class="arr">→</span><span class="cur down">${d.타사보상_cur.toLocaleString()}건</span>${badge('b-down','▼ ' + Math.abs(taDiff))}</div>`;
+  else
+    taBadge = `<div class="cr"><span class="cur same">${d.타사보상_cur.toLocaleString()}건</span>${badge('b-same','전월 동일')}</div>`;
+
+  let pkgHtml = '';
+  if (d.pkg_cur > 0 || d.pkg_prev > 0) {
+    const pkgDiff = d.pkg_cur - d.pkg_prev;
+    pkgHtml = `<hr class="divider"><div>
+      <div class="metric-label">패키지</div>
+      <div class="cr">
+        <span class="prev">${d.pkg_prev.toLocaleString()}건</span><span class="arr">→</span>
+        <span class="cur ${pkgDiff > 0 ? 'up' : pkgDiff < 0 ? 'down' : 'same'}">${d.pkg_cur.toLocaleString()}건</span>
+        ${deltaBadge(d.pkg_cur, d.pkg_prev)}
+      </div></div>`;
+  }
+
+  const visibleProds = d.new_products.slice(0, 4);
+  const moreCount = d.new_count > visibleProds.length ? d.new_count - visibleProds.length : 0;
+  const prodNamesHtml = visibleProds.map(p => `<span title="${p.model}">${p.name}</span>`).join('')
+    + (moreCount > 0 ? `<span style="color:var(--gray-mid);">외 ${moreCount}건</span>` : '');
+
+  const promoHtml = d.promo_cur.length
+    ? `<div class="promo-row">${d.promo_cur.map(p => `<span class="promo-chip">${p}</span>`).join('')}</div>`
+    : `<span style="font-size:11px;color:#9CA3AF;">미운영</span>`;
+
+  return `
+    <div class="brand-card">
+      <div class="card-header" style="background:${bc.bg};color:${bc.fg};">
+        <span>${brand}</span>
+        <span style="font-size:10px;opacity:0.7;font-weight:500;">DCP</span>
+      </div>
+      <div class="card-body">
+        <div>
+          <div class="metric-label">월요금 변동</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">${feeBadge}</div>
+        </div>
+        <hr class="divider">
+        <div>
+          <div class="metric-label">반값 할인</div>
+          <div class="pill-row">${halfPills}</div>${halfDiff}
+        </div>
+        <hr class="divider">
+        <div>
+          <div class="metric-label">타사보상</div>
+          ${taBadge}
+        </div>
+        ${pkgHtml}
+        <hr class="divider">
+        <div>
+          <div class="metric-label">신제품</div>
+          ${d.new_count > 0
+            ? `<div style="display:flex;align-items:baseline;gap:5px;"><span class="prod-count">${d.new_count}</span><span class="prod-unit">건</span></div>
+               <div class="prod-names">${prodNamesHtml}</div>`
+            : badge('b-none','신규 없음')}
+        </div>
+        <hr class="divider">
+        <div>
+          <div class="metric-label">프로모션</div>
+          ${promoHtml}
+        </div>
+      </div>
+    </div>`;
+}
+
+function bm2Card(brand, d) {
+  const bc = BRAND_COLORS[brand] || { bg: '#EFF6FF', fg: '#1D4ED8' };
+  const curRateStr  = fmtRate(d.fee_pct_cur);
+  const prevRateStr = fmtRate(d.fee_pct_prev);
+  let rateHtml;
+  if (d.fee_changed) {
+    rateHtml = `<div class="rate-row">
+      <span class="rate-chip none">${prevRateStr}</span>
+      <span style="color:#94A3B8;font-size:10px;">→</span>
+      <span class="rate-chip chg">${curRateStr}</span>${badge('b-chg','변경')}</div>`;
+  } else if (curRateStr !== '-') {
+    rateHtml = `<div class="rate-row"><span class="rate-chip">${curRateStr}</span>${badge('b-same','전월 동일')}</div>`;
+  } else {
+    rateHtml = `<span style="font-size:11px;color:#9CA3AF;">정보 없음</span>`;
+  }
+
+  let promoBadge;
+  if (d.promo_prev === 0 && d.promo_cur > 0)
+    promoBadge = `<div class="cr"><span class="cur new">${d.promo_cur.toLocaleString()}건</span>${badge('b-new','신규 운영')}</div>`;
+  else if (d.promo_cur > d.promo_prev)
+    promoBadge = `<div class="cr"><span class="prev">${d.promo_prev.toLocaleString()}건</span><span class="arr">→</span><span class="cur up">${d.promo_cur.toLocaleString()}건</span>${badge('b-up','▲ ' + (d.promo_cur - d.promo_prev).toLocaleString())}</div>`;
+  else if (d.promo_cur < d.promo_prev)
+    promoBadge = `<div class="cr"><span class="prev">${d.promo_prev.toLocaleString()}건</span><span class="arr">→</span><span class="cur down">${d.promo_cur.toLocaleString()}건</span>${badge('b-down','▼ ' + (d.promo_prev - d.promo_cur).toLocaleString())}</div>`;
+  else if (d.promo_cur > 0)
+    promoBadge = `<div class="cr"><span class="cur same">${d.promo_cur.toLocaleString()}건</span>${badge('b-same','전월 동일')}</div>`;
+  else
+    promoBadge = badge('b-none', '미운영');
+
+  let feeBadge2;
+  if (d.fee_up > 0 || d.fee_down > 0) {
+    feeBadge2 = `<div style="display:flex;gap:4px;flex-wrap:wrap;">`;
+    if (d.fee_up > 0)   feeBadge2 += badge('b-up',   '▲ 인상 ' + d.fee_up.toLocaleString() + '건');
+    if (d.fee_down > 0) feeBadge2 += badge('b-down', '▼ 인하 ' + d.fee_down.toLocaleString() + '건');
+    feeBadge2 += `</div>`;
+  } else {
+    feeBadge2 = badge('b-same', '변동 없음');
+  }
+
+  const brandsHtml = d.new_brands.slice(0, 5).map(b => `<span class="promo-chip">${b}</span>`).join('');
+
+  return `
+    <div class="brand-card">
+      <div class="card-header" style="background:${bc.bg};color:${bc.fg};">
+        <span>${brand}</span>
+        <span style="font-size:10px;opacity:0.7;font-weight:500;">BM2</span>
+      </div>
+      <div class="card-body">
+        <div>
+          <div class="metric-label">전체 상품 수</div>
+          <div class="total-block">
+            <span class="total-num">${d.total_cur.toLocaleString()}</span>
+            <span class="total-sub">건</span>
+            ${deltaBadge(d.total_cur, d.total_prev)}
+          </div>
+          <div style="font-size:10px;color:var(--gray-mid);margin-top:2px;">전월 ${d.total_prev.toLocaleString()}건</div>
+        </div>
+        <hr class="divider">
+        <div>
+          <div class="metric-label">신규 상품</div>
+          <div style="display:flex;align-items:baseline;gap:5px;">
+            <span class="prod-count">${d.new_count.toLocaleString()}</span><span class="prod-unit">건</span>
+          </div>
+          <div class="promo-row" style="margin-top:5px;">${brandsHtml}</div>
+        </div>
+        <hr class="divider">
+        <div>
+          <div class="metric-label">수수료율</div>
+          ${rateHtml}
+        </div>
+        <hr class="divider">
+        <div>
+          <div class="metric-label">사은품 프로모션</div>
+          ${promoBadge}
+        </div>
+        <hr class="divider">
+        <div>
+          <div class="metric-label">월렌탈료 변동</div>
+          ${feeBadge2}
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ═══════════════════════════════════
+   REPORT TAB — text/table renderers
+   ═══════════════════════════════════ */
+
+/* 운영 배경 자동 생성 */
+function dcpBackground(brand, d) {
+  const pts = [];
+  const newPeriods = d.halfprice_cur.filter(p => !d.halfprice_prev.includes(p)).sort((a,b)=>a-b);
+
+  if (d.fee_up > 0 || d.fee_down > 0) {
+    let s = [];
+    if (d.fee_up   > 0) s.push(`인상 ${d.fee_up}건`);
+    if (d.fee_down > 0) s.push(`인하 ${d.fee_down}건`);
+    pts.push(`월요금 일부 변동 (${s.join(' / ')})`);
+  }
+  if (newPeriods.length > 0)
+    pts.push(`반값할인 기간 신규 추가 (${newPeriods.join('/')}개월)`);
+  const taDiff = d.타사보상_cur - d.타사보상_prev;
+  if (taDiff !== 0)
+    pts.push(`타사보상 ${taDiff > 0 ? '확대' : '축소'} (${d.타사보상_prev}건 → ${d.타사보상_cur}건)`);
+  const pkgDiff = d.pkg_cur - d.pkg_prev;
+  if (pkgDiff !== 0)
+    pts.push(`패키지 ${pkgDiff > 0 ? '확대' : '축소'} (${d.pkg_prev.toLocaleString()}건 → ${d.pkg_cur.toLocaleString()}건)`);
+  if (d.new_count > 0) {
+    const names = d.new_products.slice(0, 2).map(p => p.name).join(', ');
+    const more  = d.new_count > 2 ? ` 외 ${d.new_count - 2}건` : '';
+    pts.push(`신제품 출시 (${names}${more})`);
+  }
+  if (pts.length === 0) pts.push('전월 대비 주요 변동 없음');
+  return pts;
+}
+
+function bm2Background(brand, d) {
+  const pts = [];
+  if (d.fee_changed)
+    pts.push(`수수료율 변경 (${fmtRate(d.fee_pct_prev)} → ${fmtRate(d.fee_pct_cur)})`);
+  if (d.promo_prev === 0 && d.promo_cur > 0)
+    pts.push(`사은품 프로모션 신규 운영 (${d.promo_cur}건)`);
+  else if (d.promo_cur !== d.promo_prev && (d.promo_cur > 0 || d.promo_prev > 0))
+    pts.push(`사은품 프로모션 ${d.promo_cur > d.promo_prev ? '확대' : '축소'} (${d.promo_prev}건 → ${d.promo_cur}건)`);
+  if (d.new_count > 0) {
+    const top = d.new_brands.slice(0, 3).join(', ');
+    pts.push(`신규 상품 ${d.new_count.toLocaleString()}건 추가 (${top} 등)`);
+  }
+  if (d.fee_up > 0 || d.fee_down > 0) {
+    let s = [];
+    if (d.fee_up   > 0) s.push(`인상 ${d.fee_up.toLocaleString()}건`);
+    if (d.fee_down > 0) s.push(`인하 ${d.fee_down.toLocaleString()}건`);
+    pts.push(`월렌탈료 변동 (${s.join(' / ')})`);
+  }
+  if (pts.length === 0) pts.push('전월 대비 주요 변동 없음');
+  return pts;
+}
+
+/* 운영 배경 행 */
+function rBgRow(brand, pts) {
+  const bc = BRAND_COLORS[brand] || { bg: '#EBF4FB', fg: '#1E3A5F' };
+  const content = pts.map((p, i) =>
+    `<div class="point"><span class="point-num">${i+1})</span><span>${p}</span></div>`
+  ).join('');
+  return `
+    <div class="r-bg-row">
+      <div class="r-bg-brand" style="background:${bc.bg};color:${bc.fg};">${brand}</div>
+      <div class="r-bg-content">${content}</div>
+    </div>`;
+}
+
+/* DCP 프로모션 내용 셀 */
+function dcpCurCell(d) {
+  const newPeriods = new Set(d.halfprice_cur.filter(p => !d.halfprice_prev.includes(p)));
+
+  // 월요금
+  let fee = '변동 없음';
+  if (d.fee_up > 0 && d.fee_down > 0) fee = `<span class="tag tag-up">▲인상 ${d.fee_up}건</span><span class="tag tag-down">▼인하 ${d.fee_down}건</span>`;
+  else if (d.fee_up > 0)   fee = `<span class="tag tag-up">▲ 인상 ${d.fee_up}건</span>`;
+  else if (d.fee_down > 0) fee = `<span class="tag tag-down">▼ 인하 ${d.fee_down}건</span>`;
+
+  // 반값
+  const halfStr = d.halfprice_cur.length
+    ? d.halfprice_cur.map(p => `${p}개월${newPeriods.has(p) ? ' <span class="tag tag-new">NEW</span>' : ''}`).join(' / ')
+    : '미운영';
+
+  // 타사보상
+  const taDiff = d.타사보상_cur - d.타사보상_prev;
+  const taStr = taDiff > 0
+    ? `${d.타사보상_cur.toLocaleString()}건 <span class="tag tag-up">▲${taDiff}</span>`
+    : taDiff < 0
+      ? `${d.타사보상_cur.toLocaleString()}건 <span class="tag tag-down">▼${Math.abs(taDiff)}</span>`
+      : `${d.타사보상_cur.toLocaleString()}건`;
+
+  // 패키지
+  const pkgDiff = d.pkg_cur - d.pkg_prev;
+  const pkgStr  = d.pkg_cur > 0 || d.pkg_prev > 0
+    ? (pkgDiff !== 0
+        ? `${d.pkg_cur.toLocaleString()}건 <span class="tag ${pkgDiff>0?'tag-up':'tag-down'}">${pkgDiff>0?'▲':'▼'}${Math.abs(pkgDiff)}</span>`
+        : `${d.pkg_cur.toLocaleString()}건`)
+    : '—';
+
+  // 신제품
+  const prodStr = d.new_count > 0
+    ? `<span class="tag tag-new">${d.new_count}건 신규</span><br><span style="font-size:10.5px;color:var(--gray-dark);">${d.new_products.slice(0,2).map(p=>p.name).join(', ')}${d.new_count>2?' 외':''}</span>`
+    : '신규 없음';
+
+  return `<td>
+    <div style="font-size:11px;display:flex;flex-direction:column;gap:5px;">
+      <div><span style="color:var(--gray-mid);font-size:10px;">월요금&nbsp;</span>${fee}</div>
+      <div><span style="color:var(--gray-mid);font-size:10px;">반값&nbsp;&nbsp;&nbsp;</span>${halfStr}</div>
+      <div><span style="color:var(--gray-mid);font-size:10px;">타사보상</span> ${taStr}</div>
+      <div><span style="color:var(--gray-mid);font-size:10px;">패키지&nbsp;</span>${pkgStr}</div>
+      <div><span style="color:var(--gray-mid);font-size:10px;">신제품&nbsp;</span>${prodStr}</div>
+    </div>
+  </td>`;
+}
+
+function dcpPrevCell(d) {
+  const halfStr = d.halfprice_prev.length ? d.halfprice_prev.map(p => p + '개월').join(' / ') : '미운영';
+  const pkgStr  = d.pkg_prev > 0 ? `${d.pkg_prev.toLocaleString()}건` : '—';
+  return `<td class="prev-cell">
+    <div style="font-size:11px;display:flex;flex-direction:column;gap:5px;">
+      <div><span style="color:var(--gray-mid);font-size:10px;">월요금&nbsp;</span>전월 기준</div>
+      <div><span style="color:var(--gray-mid);font-size:10px;">반값&nbsp;&nbsp;&nbsp;</span>${halfStr}</div>
+      <div><span style="color:var(--gray-mid);font-size:10px;">타사보상</span> ${d.타사보상_prev.toLocaleString()}건</div>
+      <div><span style="color:var(--gray-mid);font-size:10px;">패키지&nbsp;</span>${pkgStr}</div>
+    </div>
+  </td>`;
+}
+
+function bm2CurCell(d) {
+  const rateStr = d.fee_pct_cur.length ? fmtRate(d.fee_pct_cur) : '—';
+  const rateTag = d.fee_changed ? ` <span class="tag tag-chg">변경</span>` : '';
+  let promoStr;
+  if (d.promo_prev === 0 && d.promo_cur > 0)
+    promoStr = `${d.promo_cur}건 <span class="tag tag-new">신규</span>`;
+  else if (d.promo_cur > d.promo_prev)
+    promoStr = `${d.promo_cur}건 <span class="tag tag-up">▲${d.promo_cur - d.promo_prev}</span>`;
+  else if (d.promo_cur < d.promo_prev)
+    promoStr = `${d.promo_cur}건 <span class="tag tag-down">▼${d.promo_prev - d.promo_cur}</span>`;
+  else
+    promoStr = d.promo_cur > 0 ? `${d.promo_cur}건` : '미운영';
+
+  let feeStr = '변동 없음';
+  if (d.fee_up > 0 || d.fee_down > 0) {
+    const parts = [];
+    if (d.fee_up   > 0) parts.push(`<span class="tag tag-up">▲인상 ${d.fee_up.toLocaleString()}</span>`);
+    if (d.fee_down > 0) parts.push(`<span class="tag tag-down">▼인하 ${d.fee_down.toLocaleString()}</span>`);
+    feeStr = parts.join(' ');
+  }
+  const newBrands = d.new_brands.slice(0, 4).join(', ');
+  const prodStr = d.new_count > 0
+    ? `<span class="tag tag-new">${d.new_count.toLocaleString()}건</span> ${newBrands}${d.new_brands.length > 4 ? ' 등' : ''}`
+    : '신규 없음';
+
+  return `<td>
+    <div style="font-size:11px;display:flex;flex-direction:column;gap:5px;">
+      <div><span style="color:var(--gray-mid);font-size:10px;">상품수&nbsp;&nbsp;</span>${d.total_cur.toLocaleString()}건 ${deltaBadge(d.total_cur, d.total_prev)}</div>
+      <div><span style="color:var(--gray-mid);font-size:10px;">수수료율&nbsp;</span>${rateStr}${rateTag}</div>
+      <div><span style="color:var(--gray-mid);font-size:10px;">프로모션&nbsp;</span>${promoStr}</div>
+      <div><span style="color:var(--gray-mid);font-size:10px;">월렌탈료&nbsp;</span>${feeStr}</div>
+      <div><span style="color:var(--gray-mid);font-size:10px;">신규상품&nbsp;</span>${prodStr}</div>
+    </div>
+  </td>`;
+}
+
+function bm2PrevCell(d) {
+  const rateStr = d.fee_pct_prev.length ? fmtRate(d.fee_pct_prev) : '—';
+  const promoStr = d.promo_prev > 0 ? `${d.promo_prev}건` : '미운영';
+  return `<td class="prev-cell">
+    <div style="font-size:11px;display:flex;flex-direction:column;gap:5px;">
+      <div><span style="color:var(--gray-mid);font-size:10px;">상품수&nbsp;&nbsp;</span>${d.total_prev.toLocaleString()}건</div>
+      <div><span style="color:var(--gray-mid);font-size:10px;">수수료율&nbsp;</span>${rateStr}</div>
+      <div><span style="color:var(--gray-mid);font-size:10px;">프로모션&nbsp;</span>${promoStr}</div>
+    </div>
+  </td>`;
+}
+
+/* 종합 변경사항 bullet */
+function makeSummaryBullets(dcp, bm2, cur_month, prev_month) {
+  const bullets = [];
+  // DCP
+  Object.entries(dcp).forEach(([brand, d]) => {
+    const pts = [];
+    const newP = d.halfprice_cur.filter(p => !d.halfprice_prev.includes(p));
+    if (d.fee_up > 0 || d.fee_down > 0) {
+      const s = [];
+      if (d.fee_up   > 0) s.push(`인상 ${d.fee_up}건`);
+      if (d.fee_down > 0) s.push(`인하 ${d.fee_down}건`);
+      pts.push(`월요금 ${s.join('/')}`);
+    }
+    if (newP.length) pts.push(`반값 ${newP.join('/')}개월 신규`);
+    if (d.타사보상_cur !== d.타사보상_prev) pts.push(`타사보상 ${d.타사보상_cur > d.타사보상_prev ? '확대' : '축소'}`);
+    if (d.pkg_cur !== d.pkg_prev) pts.push(`패키지 ${d.pkg_cur > d.pkg_prev ? '확대' : '축소'}`);
+    if (d.new_count > 0) pts.push(`신제품 ${d.new_count}건`);
+    if (pts.length) bullets.push({ ch: 'DCP', brand, pts });
+  });
+  // BM2
+  Object.entries(bm2).forEach(([brand, d]) => {
+    const pts = [];
+    if (d.fee_changed) pts.push(`수수료율 변경 (${fmtRate(d.fee_pct_prev)} → ${fmtRate(d.fee_pct_cur)})`);
+    if (d.promo_cur !== d.promo_prev) pts.push(`프로모션 ${d.promo_cur > d.promo_prev ? '확대' : '축소'}`);
+    if (d.fee_up > 0 || d.fee_down > 0) {
+      const s = [];
+      if (d.fee_up   > 0) s.push(`인상 ${d.fee_up.toLocaleString()}건`);
+      if (d.fee_down > 0) s.push(`인하 ${d.fee_down.toLocaleString()}건`);
+      pts.push(`월렌탈료 ${s.join('/')}`);
+    }
+    if (d.new_count > 0) pts.push(`신규 상품 ${d.new_count.toLocaleString()}건`);
+    if (pts.length) bullets.push({ ch: 'BM2', brand, pts });
+  });
+
+  const noBullet = [];
+  [...Object.keys(dcp), ...Object.keys(bm2)].forEach(b => {
+    if (!bullets.find(bl => bl.brand === b)) noBullet.push(b);
+  });
+
+  let html = bullets.map(bl => {
+    const tag = `<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;margin-right:6px;background:${bl.ch==='DCP'?'#DBEAFE':'#DCFCE7'};color:${bl.ch==='DCP'?'#1E40AF':'#166534'};">${bl.ch}</span>`;
+    return `<div class="r-bullet"><span class="dot">▸</span><span>${tag}<strong>${bl.brand}</strong> — ${bl.pts.join(' / ')}</span></div>`;
+  }).join('');
+  if (noBullet.length)
+    html += `<div class="r-bullet"><span class="dot">▸</span><span style="color:var(--gray-mid);">${noBullet.join(', ')} — 전월 대비 변동 없음</span></div>`;
+  return html;
+}
+
+/* ═══════════════════════════════════
+   Main render
+   ═══════════════════════════════════ */
+function render() {
+  const { cur_month, prev_month, generated_at, dcp, bm2 } = DATA;
+
+  /* KPI */
+  const dcpNewTotal    = Object.values(dcp).reduce((s,d) => s + d.new_count, 0);
+  const bm2NewTotal    = Object.values(bm2).reduce((s,d) => s + d.new_count, 0);
+  const bm2FeeChanged  = Object.values(bm2).filter(d => d.fee_changed).length;
+  const bm2PromoChg    = Object.values(bm2).filter(d => d.promo_cur !== d.promo_prev).length;
+  const changedBrands  = [
+    ...Object.entries(dcp).filter(([,d]) =>
+      d.fee_up > 0 || d.fee_down > 0 || d.new_count > 0 ||
+      d.타사보상_cur !== d.타사보상_prev || d.pkg_cur !== d.pkg_prev ||
+      d.halfprice_cur.some(p => !d.halfprice_prev.includes(p))
+    ).map(([k]) => k),
+    ...Object.entries(bm2).filter(([,d]) =>
+      d.fee_changed || d.promo_cur !== d.promo_prev || d.fee_up > 0 || d.fee_down > 0
+    ).map(([k]) => k),
+  ];
+
+  /* DCP 리포트 행 */
+  const dcpReportRows = Object.entries(dcp).map(([brand, d]) => {
+    const bc = BRAND_COLORS[brand] || { bg: '#EBF4FB', fg: '#1E3A5F' };
+    return `<tr>
+      <td class="brand-cell" style="background:${bc.bg};color:${bc.fg};">${brand}</td>
+      ${dcpCurCell(d)}
+      ${dcpPrevCell(d)}
+    </tr>`;
+  }).join('');
+
+  /* BM2 리포트 행 */
+  const bm2ReportRows = Object.entries(bm2).map(([brand, d]) => {
+    const bc = BRAND_COLORS[brand] || { bg: '#EFF6FF', fg: '#1D4ED8' };
+    return `<tr>
+      <td class="brand-cell" style="background:${bc.bg};color:${bc.fg};">${brand}</td>
+      ${bm2CurCell(d)}
+      ${bm2PrevCell(d)}
+    </tr>`;
+  }).join('');
+
+  /* 운영 배경 행 */
+  const dcpBgRows = Object.entries(dcp).map(([b, d]) => rBgRow(b, dcpBackground(b, d))).join('');
+  const bm2BgRows = Object.entries(bm2).map(([b, d]) => rBgRow(b, bm2Background(b, d))).join('');
+
+  /* 요약 */
+  const summaryHtml = makeSummaryBullets(dcp, bm2, cur_month, prev_month);
+
+  document.getElementById('root').innerHTML = `
+    <!-- ── Header ── -->
+    <div class="page-header">
+      <div>
+        <h1>정책 프로모션 변동 대시보드</h1>
+        <div class="subtitle">더블체크파트너스(DCP) 4개사 &nbsp;·&nbsp; BM2 채널 5개사</div>
+      </div>
+      <div class="right">
+        <div class="month-badge">${cur_month}월</div>
+        <div class="gen-time">전월(${prev_month}월) 비교 &nbsp;|&nbsp; 생성: ${generated_at}</div>
+      </div>
+    </div>
+
+    <!-- ── KPI Bar ── -->
+    <div class="kpi-bar">
+      <div class="kpi-item">
+        <span class="kpi-value">${changedBrands.length}<span class="unit">개</span></span>
+        <span class="kpi-label">변동 발생 브랜드</span>
+        <span class="kpi-sub">${changedBrands.join(' · ')}</span>
+      </div>
+      <div class="kpi-item">
+        <span class="kpi-value">${dcpNewTotal.toLocaleString()}<span class="unit">건</span></span>
+        <span class="kpi-label">DCP 신제품 합계</span>
+        <span class="kpi-sub">코웨이 ${dcp.코웨이.new_count} · 쿠쿠 ${dcp.쿠쿠.new_count} · SK ${dcp['SK인텔릭스'].new_count} · 청호 ${dcp.청호.new_count}</span>
+      </div>
+      <div class="kpi-item">
+        <span class="kpi-value">${bm2NewTotal.toLocaleString()}<span class="unit">건</span></span>
+        <span class="kpi-label">BM2 신규 상품</span>
+        <span class="kpi-sub">${Object.entries(bm2).map(([k,d]) => `${k} ${d.new_count.toLocaleString()}`).join(' · ')}</span>
+      </div>
+      <div class="kpi-item">
+        <span class="kpi-value">${bm2FeeChanged}<span class="unit">개사</span></span>
+        <span class="kpi-label">BM2 수수료율 변경</span>
+        <span class="kpi-sub">${Object.entries(bm2).filter(([,d])=>d.fee_changed).map(([k])=>k).join(' · ') || '해당 없음'}</span>
+      </div>
+      <div class="kpi-item">
+        <span class="kpi-value">${bm2PromoChg}<span class="unit">개사</span></span>
+        <span class="kpi-label">BM2 프로모션 변경</span>
+        <span class="kpi-sub">${Object.entries(bm2).filter(([,d])=>d.promo_cur!==d.promo_prev).map(([k])=>k).join(' · ') || '해당 없음'}</span>
+      </div>
+    </div>
+
+    <!-- ── Tab Nav ── -->
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('dashboard',this)">
+        <span class="icon">📊</span> 대시보드
+      </button>
+      <button class="tab-btn" onclick="switchTab('report',this)">
+        <span class="icon">📋</span> 리포트
+      </button>
+    </div>
+
+    <!-- ── Tab: Dashboard ── -->
+    <div id="tab-dashboard" class="tab-panel active">
+      <div class="main">
+        <div class="section">
+          <div class="section-title">
+            <span class="ch-badge">DCP</span>더블체크파트너스 채널
+            <span class="meta">${cur_month}월 vs ${prev_month}월 비교 · 4개 렌탈사</span>
+          </div>
+          <div class="cards-wrap">
+            <div class="dcp-grid">${Object.entries(dcp).map(([b,d]) => dcpCard(b,d)).join('')}</div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title" style="background:#2E5BA0;">
+            <span class="ch-badge" style="background:rgba(255,255,255,0.2);">BM2</span>BM2 채널
+            <span class="meta">${cur_month}월 vs ${prev_month}월 비교 · 5개 렌탈사</span>
+          </div>
+          <div class="cards-wrap">
+            <div class="bm2-grid">${Object.entries(bm2).map(([b,d]) => bm2Card(b,d)).join('')}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab: Report ── -->
+    <div id="tab-report" class="tab-panel">
+      <div class="main">
+        <div class="report-wrap">
+          <!-- Toolbar -->
+          <div class="report-toolbar">
+            <h2>월간 정책 프로모션 변동 리포트 — ${cur_month}월</h2>
+            <div class="toolbar-btns">
+              <button class="btn btn-outline" onclick="copyReport()">📋 텍스트 복사</button>
+              <button class="btn btn-primary" onclick="window.print()">🖨️ 인쇄 / PDF</button>
+            </div>
+          </div>
+
+          <!-- Report body -->
+          <div class="report-body" id="report-body">
+
+            <!-- Cover -->
+            <div class="r-cover">
+              <div>
+                <div class="r-cover-title">${cur_month}월 정책 프로모션 변동 리포트</div>
+                <div class="r-cover-sub">DCP 4개사 · BM2 5개사 &nbsp;|&nbsp; 전월(${prev_month}월) 대비</div>
+              </div>
+              <div>
+                <div class="r-cover-month">${cur_month}월</div>
+                <div class="r-cover-meta">생성: ${generated_at}</div>
+              </div>
+            </div>
+
+            <!-- 변경사항 요약 -->
+            <div class="r-summary">
+              <div class="r-summary-title">▣ ${cur_month}월 주요 변경사항 요약</div>
+              <div class="r-summary-bullets">${summaryHtml}</div>
+            </div>
+
+            <!-- ────── DCP ────── -->
+            <div class="r-sec-hdr">
+              <span class="ch">DCP</span>
+              1. 더블체크파트너스 채널 — 운영 배경
+            </div>
+            <div class="r-bg-table">${dcpBgRows}</div>
+
+            <div class="r-sec-hdr">
+              <span class="ch">DCP</span>
+              2. 더블체크파트너스 채널 — ${cur_month}월 vs ${prev_month}월 프로모션 비교
+            </div>
+            <div class="r-table-wrap">
+              <table class="r-table">
+                <thead>
+                  <tr>
+                    <th class="brand-col" rowspan="2" style="width:80px;">렌탈사</th>
+                    <th class="cur" colspan="1">${cur_month}월 (당월)</th>
+                    <th class="prev" colspan="1">${prev_month}월 (전월)</th>
+                  </tr>
+                </thead>
+                <tbody>${dcpReportRows}</tbody>
+              </table>
+            </div>
+
+            <!-- ────── BM2 ────── -->
+            <div class="r-sec-hdr bm2">
+              <span class="ch">BM2</span>
+              3. BM2 채널 — 운영 배경
+            </div>
+            <div class="r-bg-table">${bm2BgRows}</div>
+
+            <div class="r-sec-hdr bm2">
+              <span class="ch">BM2</span>
+              4. BM2 채널 — ${cur_month}월 vs ${prev_month}월 프로모션 비교
+            </div>
+            <div class="r-table-wrap">
+              <table class="r-table">
+                <thead>
+                  <tr>
+                    <th class="brand-col" rowspan="2" style="width:80px;">렌탈사</th>
+                    <th class="cur" colspan="1">${cur_month}월 (당월)</th>
+                    <th class="prev" colspan="1">${prev_month}월 (전월)</th>
+                  </tr>
+                </thead>
+                <tbody>${bm2ReportRows}</tbody>
+              </table>
+            </div>
+
+            <!-- Footer -->
+            <div class="r-footer">
+              <span>정책 프로모션 변동 리포트 · ${cur_month}월호</span>
+              <span>생성: ${generated_at} · eunseo@rentre.kr</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ── Tab 전환 ── */
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ── 텍스트 복사 ── */
+function copyReport() {
+  const { cur_month, prev_month, dcp, bm2 } = DATA;
+  let txt = `[${cur_month}월 정책 프로모션 변동 리포트]\n`;
+  txt += `전월(${prev_month}월) 대비 분석\n\n`;
+
+  txt += `▣ DCP — 운영 배경\n`;
+  Object.entries(dcp).forEach(([b, d]) => {
+    txt += `\n[${b}]\n`;
+    dcpBackground(b, d).forEach((p, i) => { txt += `  ${i+1}) ${p}\n`; });
+  });
+
+  txt += `\n▣ BM2 — 운영 배경\n`;
+  Object.entries(bm2).forEach(([b, d]) => {
+    txt += `\n[${b}]\n`;
+    bm2Background(b, d).forEach((p, i) => { txt += `  ${i+1}) ${p}\n`; });
+  });
+
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = document.querySelector('.btn-outline');
+    const orig = btn.textContent;
+    btn.textContent = '✅ 복사 완료!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  }).catch(() => alert('복사에 실패했습니다. 브라우저 권한을 확인해주세요.'));
+}
+
+render();
+</script>
+</body>
+</html>
