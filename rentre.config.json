@@ -1,0 +1,10 @@
+{
+  "name": "정책 프로모션 변동 추이 자동화",
+  "slug": "policy-automation",
+  "description": "DCP 4개사·BM2 5개사 정책 프로모션 변동을 자동 분석하여 Excel 보고서를 생성합니다",
+  "icon": "📊",
+  "author": "eunseo@rentre.kr",
+  "category": "automation",
+  "version": "1.0.0",
+  "tags": ["policy", "excel", "automation", "DCP", "BM2"]
+}
