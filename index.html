@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>정책 프로모션 대시보드</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     :root {
       --navy:      #1E3A5F;
@@ -46,6 +47,57 @@
     .page-header .right { text-align: right; }
     .page-header .month-badge { font-size: 30px; font-weight: 800; letter-spacing: -1px; }
     .page-header .gen-time { font-size: 10.5px; opacity: 0.6; margin-top: 2px; }
+
+    /* ── Upload Button ── */
+    .upload-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 14px;
+      background: rgba(255,255,255,0.15);
+      border: 1.5px solid rgba(255,255,255,0.4);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 12px; font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .upload-btn:hover { background: rgba(255,255,255,0.25); }
+    .upload-btn.success { background: rgba(34,197,94,0.3); border-color: rgba(34,197,94,0.7); }
+    .upload-btn.error   { background: rgba(239,68,68,0.3);  border-color: rgba(239,68,68,0.7); }
+
+    /* ── Storage Bar ── */
+    #storage-bar {
+      display: none;
+      background: #0F2744;
+      color: rgba(255,255,255,0.7);
+      font-size: 11px;
+      padding: 5px 32px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    #storage-bar.hidden { display: none !important; }
+    .storage-chip {
+      background: rgba(37,99,168,0.5);
+      border: 1px solid rgba(37,99,168,0.8);
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-weight: 600;
+      color: #93C5FD;
+    }
+    .storage-clear {
+      margin-left: auto;
+      cursor: pointer;
+      opacity: 0.5;
+      font-size: 10px;
+      padding: 2px 6px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 3px;
+      background: none;
+      color: inherit;
+    }
+    .storage-clear:hover { opacity: 1; }
 
     /* ── KPI Bar ── */
     .kpi-bar {
@@ -351,15 +403,24 @@
 </head>
 <body>
 
+<div id="storage-bar" class="hidden">
+  <span>💾 저장된 데이터:</span>
+  <span id="storage-chips"></span>
+  <button class="storage-clear" onclick="clearStorage()">전체 초기화</button>
+</div>
 <div id="root"></div>
 
 <script>
 /* ═══════════════════════════════════════════════════════════
    Embedded Data  (run_all_brands.py → policy_dashboard.json)
    ═══════════════════════════════════════════════════════════ */
+const _now = new Date();
+const _curMonth = _now.getMonth() + 1;
+const _prevMonth = _curMonth > 1 ? _curMonth - 1 : 12;
+
 const DATA = {
-  "cur_month": 5,
-  "prev_month": 4,
+  "cur_month": _curMonth,
+  "prev_month": _prevMonth,
   "generated_at": "2026-05-21 11:13",
   "dcp": {
     "코웨이": {
@@ -430,6 +491,15 @@ const DATA = {
       "halfprice_cur": [], "halfprice_prev": [],
       "타사보상_cur": 584, "타사보상_prev": 580,
       "pkg_cur": 0, "pkg_prev": 0
+    },
+    "LG전자": {
+      "fee_up": 0, "fee_down": 0,
+      "new_products": [],
+      "new_count": 0,
+      "promo_cur": [],
+      "halfprice_cur": [], "halfprice_prev": [],
+      "타사보상_cur": 0, "타사보상_prev": 0,
+      "pkg_cur": 0, "pkg_prev": 0
     }
   },
   "bm2": {
@@ -472,6 +542,7 @@ const BRAND_COLORS = {
   '쿠쿠':      { bg: '#DBEAFE', fg: '#1E40AF' },
   'SK인텔릭스': { bg: '#E0E7FF', fg: '#3730A3' },
   '청호':      { bg: '#E8EEF7', fg: '#2E4A7A' },
+  'LG전자':    { bg: '#FDECEA', fg: '#9B1010' },
   '헬로렌탈':  { bg: '#EFF6FF', fg: '#1D4ED8' },
   '현대유버스': { bg: '#E2E8F0', fg: '#334155' },
   '이니렌탈':  { bg: '#DBEAFE', fg: '#1E40AF' },
@@ -951,9 +1022,17 @@ function render() {
         <h1>정책 프로모션 변동 대시보드</h1>
         <div class="subtitle">더블체크파트너스(DCP) 4개사 &nbsp;·&nbsp; BM2 채널 5개사</div>
       </div>
-      <div class="right">
-        <div class="month-badge">${cur_month}월</div>
-        <div class="gen-time">전월(${prev_month}월) 비교 &nbsp;|&nbsp; 생성: ${generated_at}</div>
+      <div style="display:flex;align-items:center;gap:20px;">
+        <button class="upload-btn" id="btn-download-tpl" onclick="downloadTemplate()">
+          📥 템플릿
+        </button>
+        <button class="upload-btn" onclick="document.getElementById('excel-upload').click()">
+          📂 엑셀 업로드
+        </button>
+        <div class="right">
+          <div class="month-badge">${cur_month}월</div>
+          <div class="gen-time">전월(${prev_month}월) 비교 &nbsp;|&nbsp; 생성: ${generated_at}</div>
+        </div>
       </div>
     </div>
 
@@ -967,7 +1046,7 @@ function render() {
       <div class="kpi-item">
         <span class="kpi-value">${dcpNewTotal.toLocaleString()}<span class="unit">건</span></span>
         <span class="kpi-label">DCP 신제품 합계</span>
-        <span class="kpi-sub">코웨이 ${dcp.코웨이.new_count} · 쿠쿠 ${dcp.쿠쿠.new_count} · SK ${dcp['SK인텔릭스'].new_count} · 청호 ${dcp.청호.new_count}</span>
+        <span class="kpi-sub">${Object.entries(dcp).map(([k,d]) => `${k} ${d.new_count}`).join(' · ')}</span>
       </div>
       <div class="kpi-item">
         <span class="kpi-value">${bm2NewTotal.toLocaleString()}<span class="unit">건</span></span>
@@ -1148,7 +1227,340 @@ function copyReport() {
   }).catch(() => alert('복사에 실패했습니다. 브라우저 권한을 확인해주세요.'));
 }
 
-render();
+/* ── 대시보드 초기화 (localStorage 업로드 데이터 → policy_dashboard.json → 내장 DATA) ── */
+async function initDashboard() {
+  try {
+    const saved = localStorage.getItem('policy_dashboard_data');
+    if (saved) {
+      Object.assign(DATA, JSON.parse(saved));
+      render();
+      return;
+    }
+  } catch (e) { /* localStorage 파싱 실패 시 무시 */ }
+  try {
+    const res = await fetch('policy_dashboard.json');
+    if (res.ok) {
+      const json = await res.json();
+      Object.assign(DATA, json);
+    }
+  } catch (e) {
+    console.log('policy_dashboard.json 로드 실패, 내장 데이터 사용:', e);
+  }
+  render();
+}
+initDashboard();
+
+/* ── 템플릿 다운로드 (현월 시트만 생성 — 전월은 스냅샷에서 자동 로드) ── */
+function downloadTemplate() {
+  const MONTH = _curMonth;
+
+  // make_standard_template.py DCP_COLS 기준 표준 컬럼
+  const DCP_COLS = ['모델명','제품명','관리방식','관리주기','의무사용기간','계약기간','월요금','지원금','수수료','규정구분','패키지구분','프로모션','반값기간','면제기간'];
+  // make_standard_template.py BM2_COLS 기준 표준 컬럼
+  const BM2_COLS = ['입력일','구분','접수처','카테고리','브랜드','요금구분','상품명','렌탈기간','렌탈료면제','월렌탈료','수수료구분','정액수수료','수수료율','프로모션금액','최종지원금'];
+  const BM2_BRANDS = ['LG헬로비전','현대유버스','이니렌탈','스마트렌탈','BS렌탈'];
+
+  const DCP_EXAMPLE = ['← 입력 예시','제품명 예시','방문관리','4','36','','39900','','351920','일반','','반값할인','6',''];
+
+  const wb = XLSX.utils.book_new();
+
+  function addDcp(brand, month) {
+    const ws = XLSX.utils.aoa_to_sheet([
+      [`[${brand}] 표준 데이터 시트 — 컬럼명을 절대 변경하지 마세요`],
+      DCP_COLS,
+      DCP_EXAMPLE,
+    ]);
+    XLSX.utils.book_append_sheet(wb, ws, brand + '_' + month + '월');
+  }
+
+  function addBM2(month) {
+    // 접수처는 BM2_COLS에서 index 2
+    const emptyRow = () => Array(BM2_COLS.length).fill('');
+    const starterRows = BM2_BRANDS.map(b => {
+      const row = emptyRow();
+      row[2] = b;
+      return row;
+    });
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['[BM2] 표준 데이터 시트 — 컬럼명을 절대 변경하지 마세요'],
+      BM2_COLS,
+      ...starterRows,
+    ]);
+    XLSX.utils.book_append_sheet(wb, ws, 'BM2_' + month + '월');
+  }
+
+  // 현월 시트만 생성 (전월 데이터는 run_all_brands.py가 스냅샷에서 자동 로드)
+  ['코웨이','쿠쿠','SK인텔릭스','청호','LG전자'].forEach(b => addDcp(b, MONTH));
+  addBM2(MONTH);
+
+  XLSX.writeFile(wb, '정책서비교_' + MONTH + '월_템플릿.xlsx');
+}
+
+/* ══════════════════════════════════════════════════════════
+   Excel Upload & Analysis (ported from lib/analyze.ts)
+   ══════════════════════════════════════════════════════════ */
+(function() {
+  /* ── 유틸 ── */
+  function sheetToRows(wb, sheetName) {
+    const ws = wb.Sheets[sheetName];
+    if (!ws) throw new Error('시트 없음: "' + sheetName + '"');
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '', range: 1 });
+    return rows;
+  }
+
+  function numericUniq(data, col) {
+    const vals = data.map(r => Number(r[col])).filter(v => !isNaN(v) && v > 0);
+    return [...new Set(vals)].sort((a, b) => a - b);
+  }
+
+  function detectNewProducts(cur, prev, modelCol, nameCol) {
+    if (!cur.length || !(modelCol in (cur[0] || {}))) return [];
+    const prevModels = new Set(prev.map(r => String(r[modelCol] || '').trim()).filter(Boolean));
+    const seen = new Set();
+    const result = [];
+    for (const r of cur) {
+      const m = String(r[modelCol] || '').trim();
+      if (!m || prevModels.has(m) || seen.has(m)) continue;
+      seen.add(m);
+      result.push({ model: m, name: String(r[nameCol] || '') });
+    }
+    return result;
+  }
+
+  function detectFeeChanges(cur, prev, keyColumns, feeCol) {
+    feeCol = feeCol || '월요금';
+    const validKey = keyColumns.filter(k => cur[0] && k in cur[0] && prev[0] && k in prev[0]);
+    if (!validKey.length) return { up: 0, down: 0 };
+    const makeKey = r => validKey.map(k => String(r[k] || '')).join('|');
+    const prevMap = new Map();
+    for (const r of prev) {
+      const fee = parseFloat(String(r[feeCol] || ''));
+      if (!isNaN(fee)) prevMap.set(makeKey(r), fee);
+    }
+    let up = 0, down = 0;
+    const seen = new Set();
+    for (const r of cur) {
+      const k = makeKey(r);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      const curFee = parseFloat(String(r[feeCol] || ''));
+      const prevFee = prevMap.get(k);
+      if (isNaN(curFee) || prevFee === undefined) continue;
+      if (curFee > prevFee) up++;
+      else if (curFee < prevFee) down++;
+    }
+    return { up, down };
+  }
+
+  function getRegulCol(data) {
+    if (!data.length) return '';
+    if ('규정구분' in data[0]) return '규정구분';
+    if ('규정 구분' in data[0]) return '규정 구분';
+    if ('규정' in data[0]) return '규정';
+    return '';
+  }
+
+  function countPolicy(data, col, value) {
+    if (!data.length || !(col in data[0])) return 0;
+    return data.filter(r => String(r[col] || '').includes(value)).length;
+  }
+
+  function getPromotions(data, col) {
+    if (!data.length || !(col in data[0])) return [];
+    return [...new Set(data.map(r => String(r[col] || '').trim()).filter(Boolean))];
+  }
+
+  function getUniqNums(data, col) {
+    if (!data.length || !(col in data[0])) return [];
+    const vals = data.map(r => Number(r[col])).filter(v => !isNaN(v) && v > 0);
+    return [...new Set(vals)].sort((a, b) => a - b);
+  }
+
+  /* ── DCP 브랜드 분석 ── */
+  function analyzeDCP(wb, brand, curSheet, prevSheet, eb) {
+    try {
+      const cur  = sheetToRows(wb, curSheet);
+      let prev = [];
+      try { prev = sheetToRows(wb, prevSheet); } catch(e) { /* prev 시트 없음 → 기존 DATA 사용 */ }
+      const hasPrev = prev.length > 0;
+      const isSK = brand === 'SK인텔릭스';
+      const modelCol = isSK ? '제품명' : '모델명';
+      const nameCol  = '제품명';
+      const regulCol = getRegulCol(cur);
+      const keyCol   = isSK
+        ? ['제품명', '관리방식', '의무사용기간', '계약기간', regulCol].filter(Boolean)
+        : ['모델명', '관리방식', '의무사용기간', '계약기간'];
+      const newProducts  = detectNewProducts(cur, prev, modelCol, nameCol);
+      const { up, down } = detectFeeChanges(cur, prev, keyCol);
+      return {
+        brand, channel: 'DCP',
+        new_products: newProducts,
+        new_count: newProducts.length,
+        fee_up:   hasPrev ? up   : (eb && eb.fee_up   || 0),
+        fee_down: hasPrev ? down : (eb && eb.fee_down || 0),
+        타사보상_cur:  countPolicy(cur, regulCol, '타사보상'),
+        타사보상_prev: hasPrev ? countPolicy(prev, regulCol, '타사보상') : (eb && eb.타사보상_prev || 0),
+        pkg_cur:  countPolicy(cur,  '패키지구분', '패키지'),
+        pkg_prev: hasPrev ? countPolicy(prev, '패키지구분', '패키지') : (eb && eb.pkg_prev || 0),
+        promo_cur:      getPromotions(cur, '프로모션'),
+        halfprice_cur:  numericUniq(cur,  '반값기간'),
+        halfprice_prev: hasPrev ? numericUniq(prev, '반값기간') : (eb && eb.halfprice_prev || []),
+      };
+    } catch(e) {
+      return {
+        brand, channel: 'DCP',
+        new_products: [], new_count: 0,
+        fee_up: 0, fee_down: 0,
+        타사보상_cur: 0, 타사보상_prev: 0,
+        pkg_cur: 0, pkg_prev: 0,
+        promo_cur: [], halfprice_cur: [], halfprice_prev: [],
+        error: e.message,
+      };
+    }
+  }
+
+  function uniqueProductCount(rows) {
+    const names = rows.map(r => String(r['상품명'] || '').replace(/\s*\(\d+개?월?\)\s*/g, '').trim());
+    return new Set(names.filter(Boolean)).size;
+  }
+
+  /* ── BM2 분석 ── */
+  const BM2_BRAND_MAP = {
+    'LG헬로비전': '헬로렌탈', '헬로렌탈': '헬로렌탈',
+    '현대유버스': '현대유버스', '이니렌탈': '이니렌탈',
+    '스마트렌탈': '스마트렌탈', 'BS렌탈': 'BS렌탈',
+  };
+
+  function analyzeBM2(wb, curSheet, prevSheet, existingBm2) {
+    let curAll = [], prevAll = [];
+    try { curAll  = sheetToRows(wb, curSheet);  } catch(e) { /* 시트 없음 */ }
+    try { prevAll = sheetToRows(wb, prevSheet); } catch(e) { /* 시트 없음 */ }
+    const hasPrevSheet = prevAll.length > 0;
+
+    const brands = [...new Set(Object.values(BM2_BRAND_MAP))];
+    return brands.map(brandName => {
+      const cur  = curAll.filter(r  => BM2_BRAND_MAP[String(r['접수처']  || '').trim()] === brandName);
+      const prev = prevAll.filter(r => BM2_BRAND_MAP[String(r['접수처'] || '').trim()] === brandName);
+      const eb   = existingBm2 && existingBm2[brandName];
+
+      const newProds = detectNewProducts(cur, prev, '상품명', '상품명');
+      const { up, down } = detectFeeChanges(cur, prev, ['상품명', '수수료구분', '렌탈기간']);
+
+      /* 수수료율 */
+      const feeCol = cur[0] && '수수료율' in cur[0] ? '수수료율' : '수수료';
+      const feePctCur  = getUniqNums(cur, feeCol);
+      const feePctPrev = hasPrevSheet ? getUniqNums(prev, feeCol) : (eb && eb.fee_pct_prev || []);
+
+      /* 프로모션 건수 */
+      const promoCol = cur[0] && '프로모션금액' in cur[0] ? '프로모션금액'
+                     : cur[0] && '프로모션 정책' in cur[0] ? '프로모션 정책' : '영업 정책';
+      const promoCurCount  = cur.filter(r => String(r[promoCol] || '').trim()).length;
+      const promoPrevCount = hasPrevSheet
+        ? prev.filter(r => String(r[promoCol] || '').trim()).length
+        : (eb && eb.promo_prev || 0);
+
+      /* 신규 브랜드 */
+      const mfgCol = cur[0] && '제조사' in cur[0] ? '제조사' : ('브랜드' in (cur[0]||{}) ? '브랜드' : '');
+      const newBrands = mfgCol
+        ? [...new Set(newProds.map(p => {
+            const row = cur.find(r => String(r['상품명']||'').trim() === p.model);
+            return row ? String(row[mfgCol]||'').trim() : '';
+          }).filter(Boolean))].slice(0, 5)
+        : [];
+
+      return {
+        brand: brandName, channel: 'BM2',
+        total_cur: uniqueProductCount(cur),
+        total_prev: hasPrevSheet ? uniqueProductCount(prev) : (eb && eb.total_prev || 0),
+        new_count: newProds.length, new_brands: newBrands,
+        fee_pct_cur: feePctCur, fee_pct_prev: feePctPrev,
+        fee_changed: feePctCur.join(',') !== feePctPrev.join(','),
+        promo_cur: promoCurCount, promo_prev: promoPrevCount,
+        fee_up:   hasPrevSheet ? up   : (eb && eb.fee_up   || 0),
+        fee_down: hasPrevSheet ? down : (eb && eb.fee_down || 0),
+      };
+    });
+  }
+
+  /* ── 시트명에서 월 자동 감지 ── */
+  function detectMonth(wb) {
+    const months = [];
+    for (const name of wb.SheetNames) {
+      const m = name.match(/[_\s](\d{1,2})월$/);
+      if (m) months.push(parseInt(m[1], 10));
+    }
+    if (!months.length) return null;
+    return Math.max(...months);
+  }
+
+  /* ── 워크북 → DATA 변환 ── */
+  function workbookToData(wb, existingData) {
+    const month = detectMonth(wb);
+    if (!month) throw new Error('시트명에서 월을 감지하지 못했습니다.\n예: 코웨이_5월, BM2_5월');
+    const prev = month > 1 ? month - 1 : 12;
+
+    const dcpBrands = [
+      { brand: '코웨이',     cur: `코웨이_${month}월`,    prv: `코웨이_${prev}월`    },
+      { brand: '쿠쿠',       cur: `쿠쿠_${month}월`,      prv: `쿠쿠_${prev}월`      },
+      { brand: 'SK인텔릭스', cur: `SK인텔릭스_${month}월`, prv: `SK인텔릭스_${prev}월` },
+      { brand: '청호',       cur: `청호_${month}월`,       prv: `청호_${prev}월`       },
+      { brand: 'LG전자',     cur: `LG전자_${month}월`,    prv: `LG전자_${prev}월`    },
+    ];
+
+    const dcp = {};
+    for (const { brand, cur, prv } of dcpBrands) {
+      const eb = existingData && existingData.dcp && existingData.dcp[brand];
+      dcp[brand] = analyzeDCP(wb, brand, cur, prv, eb);
+    }
+
+    const bm2Results = analyzeBM2(wb, `BM2_${month}월`, `BM2_${prev}월`, existingData && existingData.bm2);
+    const bm2 = {};
+    for (const b of bm2Results) bm2[b.brand] = b;
+
+    const now = new Date();
+    const generated_at = now.getFullYear() + '-'
+      + String(now.getMonth()+1).padStart(2,'0') + '-'
+      + String(now.getDate()).padStart(2,'0') + ' '
+      + String(now.getHours()).padStart(2,'0') + ':'
+      + String(now.getMinutes()).padStart(2,'0');
+
+    return { cur_month: month, prev_month: prev, generated_at, dcp, bm2 };
+  }
+
+  /* ── 파일 input ── */
+  const input = document.createElement('input');
+  input.id = 'excel-upload';
+  input.type = 'file';
+  input.accept = '.xlsx,.xls';
+  input.style.display = 'none';
+  document.body.appendChild(input);
+
+  input.addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const btn = document.querySelector('.upload-btn');
+      try {
+        const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        const newData = workbookToData(wb, DATA);
+        Object.assign(DATA, newData);
+        localStorage.setItem('policy_dashboard_data', JSON.stringify(DATA));
+        render();
+        btn.textContent = '✅ ' + file.name;
+        btn.classList.add('success');
+        setTimeout(() => { btn.textContent = '📂 엑셀 업로드'; btn.classList.remove('success'); }, 3000);
+      } catch(err) {
+        btn.textContent = '❌ 오류';
+        btn.classList.add('error');
+        setTimeout(() => { btn.textContent = '📂 엑셀 업로드'; btn.classList.remove('error'); }, 3000);
+        alert('엑셀 분석 실패:\n' + err.message);
+      }
+      input.value = '';
+    };
+    reader.readAsArrayBuffer(file);
+  });
+})();
 </script>
 </body>
 </html>

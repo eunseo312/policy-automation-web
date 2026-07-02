@@ -1,0 +1,8 @@
+node_modules
+.next/
+data/
+tmp/
+*.xlsx
+~$*
+.DS_Store
+next-env.d.ts
